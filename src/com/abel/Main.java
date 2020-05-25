@@ -128,6 +128,8 @@ public class Main extends Application {
             @Override
             public void handle(MouseDragEvent event) {
 //                System.out.println("over");
+                // 截图之前先关闭半透明遮罩 防止被截到
+                stage.close();
                 Robot robot = null;
                 try {
                     robot = new Robot();
