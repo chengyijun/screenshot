@@ -1,6 +1,8 @@
 package com.abel;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -11,6 +13,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.*;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -30,6 +33,11 @@ public class Main extends Application {
     double width = 0;
     double height = 0;
     ImageView imageView = null;
+    Pane pane = null;
+
+    public Main() {
+
+    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -38,8 +46,11 @@ public class Main extends Application {
         // 往根节点添加node
         Button button = new Button("截图");
         root.setTop(button);
+        pane = new Pane();
         imageView = new ImageView();
-        root.setCenter(imageView);
+        pane.getChildren().add(imageView);
+        root.setCenter(pane);
+
         Scene scene = new Scene(root, 400, 300);
         primaryStage.setScene(scene);
         primaryStage.setTitle("截图工具");
@@ -142,6 +153,27 @@ public class Main extends Application {
                     // 截图设置到ImageView
                     imageView.setImage(writableImage);
                     System.out.println("截图成功 已经保存");
+
+
+                    // 保持截图长宽比 通过监听ImageView父节点Pane的宽高 动态改变ImageView的宽高
+                    imageView.setPreserveRatio(true);
+                    imageView.setFitHeight(pane.getHeight());
+                    imageView.setFitWidth(pane.getWidth());
+                    if (pane != null) {
+                        pane.widthProperty().addListener(new ChangeListener<Number>() {
+                            @Override
+                            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                                imageView.setFitWidth(newValue.doubleValue());
+
+                            }
+                        });
+                        pane.heightProperty().addListener(new ChangeListener<Number>() {
+                            @Override
+                            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                                imageView.setFitHeight(newValue.doubleValue());
+                            }
+                        });
+                    }
                 }
                 stage.close();
                 primaryStage.setIconified(false);
