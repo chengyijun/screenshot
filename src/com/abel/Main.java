@@ -1,6 +1,8 @@
 package com.abel;
 
+import com.test.TrayIconDemo;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.SwingFXUtils;
@@ -19,9 +21,12 @@ import javafx.stage.StageStyle;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 public class Main extends Application {
     Stage primaryStage = null;
@@ -56,10 +61,92 @@ public class Main extends Application {
         primaryStage.setTitle("截图工具");
         primaryStage.show();
 
+        // 设置系统托盘
+        setTrayIcon();
+
         button.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 screenShot();
+            }
+        });
+
+
+    }
+
+    private void setTrayIcon() {
+        //保证窗口关闭后，Stage对象仍然存活
+        Platform.setImplicitExit(false);
+        //构建系统托盘图标
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(Objects.requireNonNull(TrayIconDemo.class.getClassLoader().getResourceAsStream("com/image/ico.png")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        PopupMenu popup = new PopupMenu();
+        MenuItem item_show = new MenuItem("show");
+        MenuItem item_exit = new MenuItem("exit");
+        popup.add(item_show);
+        popup.add(item_exit);
+        // 创建一个托盘图标 初始化需要三个参数  1-托盘图标图片 2-托盘鼠标提示信息 3-上下文菜单（可选）
+        TrayIcon trayIcon = new TrayIcon(image, "子龙的截图工具", popup);
+        trayIcon.setImageAutoSize(true);
+        //获取系统托盘
+        SystemTray tray = SystemTray.getSystemTray();
+        //添加托盘图标
+        try {
+            tray.add(trayIcon);
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+        //添加事件监听-> 托盘图标被点击
+        trayIcon.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                //双击左键
+                if (e.getButton() == java.awt.event.MouseEvent.BUTTON1 && e.getClickCount() == 1) {
+                    Platform.runLater(() -> {
+                        if (primaryStage.isIconified()) {
+                            primaryStage.setIconified(false);
+                        }
+                        if (!primaryStage.isShowing()) {
+                            primaryStage.show();
+                        }
+                        primaryStage.toFront();
+                    });
+                }
+            }
+        });
+        //添加事件监听-> 托盘弹出菜单项被点击
+        item_show.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (primaryStage.isIconified()) {
+                            primaryStage.setIconified(false);
+                        }
+                        if (!primaryStage.isShowing()) {
+                            primaryStage.show();
+                        }
+                        primaryStage.toFront();
+                    }
+                });
+            }
+        });
+        item_exit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        Platform.setImplicitExit(true);
+                        tray.remove(trayIcon);
+                        Platform.runLater(primaryStage::close);
+                    }
+                });
             }
         });
     }
@@ -119,7 +206,7 @@ public class Main extends Application {
                 if (shotBorderPane != null) {
                     shotBorderPane.setPrefSize(width, height);
                     shotBorderPane.setStyle("-fx-background-color:transparent;");
-                    shotBorderPane.setStyle("-fx-border-color:#ffffffff;");
+                    shotBorderPane.setStyle("-fx-border-color:#FF0000;");
                 }
             }
         });
